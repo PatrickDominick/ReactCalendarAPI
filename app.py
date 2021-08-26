@@ -18,6 +18,7 @@ class Month(db.Model):
     start_day = db.Column(db.Integer, nullable = False)
     days_in_month = db.Column(db.Integer, nullable = False)
     days_in_previous_month = db.Column(db.Integer, nullable = False)
+    reminders = db.relationship("Reminder", backref="month", cascade = "all, delete, delete-orphan")
 
     def __init__(self, name, year, start_day, days_in_month, days_in_previous_month) :
         self.name = name
@@ -30,7 +31,7 @@ class Reminder(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.String, nullable = False)
     date = db.Column(db.Integer, nullable = False)
-    month_id = db.Column(db.Integer, nullable = False)
+    month_id = db.Column(db.Integer, db.ForeignKey("month.id"), nullable = False)
 
     def __init__(self, text, date, month_id):
         self.text = text
@@ -38,19 +39,20 @@ class Reminder(db.Model):
         self.month_id = month_id
 
 
-class MonthSchema(ma.Schema):
-    class Meta: 
-        fields = ("id", "name", "year", "start_day", "days_in_month", "days_in_previous_month")
-
-month_schema = MonthSchema()
-multiple_month_schema = MonthSchema(many = True)
-
 class ReminderSchema(ma.Schema):
     class Meta: 
         fields = ("id", "text", "date", "month_id")
 
 reminder_schema = ReminderSchema()
 multiple_reminder_schema = ReminderSchema(many=True)
+
+class MonthSchema(ma.Schema):
+    class Meta: 
+        fields = ("id", "name", "year", "start_day", "days_in_month", "days_in_previous_month", "reminders")
+    reminders = ma.Nested(multiple_reminder_schema)
+
+month_schema = MonthSchema()
+multiple_month_schema = MonthSchema(many = True)
 
 
 @app.route("/month/add", methods=["POST"])
